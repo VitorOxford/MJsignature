@@ -1,0 +1,23 @@
+{
+  "name": "mj-signature",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.56.1",
+    "pdf-lib": "^1.17.1",
+    "vue": "^3.5.18",
+    "vue-router": "^4.5.1",
+    "vue-signature-pad": "^3.0.2",
+    "vuetify": "^3.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "vite": "^7.1.2"
+  }
+}
