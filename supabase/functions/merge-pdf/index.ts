@@ -6,7 +6,7 @@ import { PDFDocument, rgb, StandardFonts } from 'https://esm.sh/pdf-lib@1.17.1'
 import { corsHeaders } from '../_shared/cors.ts'
 
 serve(async (req) => {
-  // Tratamento de CORS para requisições pre-flight
+  // Tratamento de CORS
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -17,14 +17,12 @@ serve(async (req) => {
       throw new Error('Faltam parâmetros essenciais (templateId, formData)')
     }
 
-    // Inicializa o cliente Supabase com a chave de administrador (service role)
-    // para ter permissões totais no backend.
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SERVICE_KEY') ?? '' // CORRIGIDO: Usa a variável de ambiente correta
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '' // Use a chave correta
     );
 
-    // 1. Busca os detalhes do template, incluindo os campos e o caminho do arquivo.
+    // 1. Busca os detalhes do template.
     const { data: template, error: templateError } = await supabaseAdmin
       .from('document_templates')
       .select('storage_path, editable_fields')
@@ -33,7 +31,7 @@ serve(async (req) => {
 
     if (templateError) throw templateError
 
-    // 2. Baixa o arquivo PDF original do Supabase Storage.
+    // 2. Baixa o PDF original do Storage.
     const { data: pdfBlob, error: downloadError } = await supabaseAdmin.storage
       .from('templates')
       .download(template.storage_path)
@@ -42,28 +40,33 @@ serve(async (req) => {
     
     const pdfBytes = await pdfBlob.arrayBuffer()
     const pdfDoc = await PDFDocument.load(pdfBytes)
-    const page = pdfDoc.getPages()[0] // Trabalha com a primeira página do PDF
     const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+    const pages = pdfDoc.getPages()
     
-    // 3. Itera sobre os campos definidos pelo admin e "desenha" os dados enviados pelo usuário no PDF.
+    // 3. Itera sobre os campos e desenha na página correta.
     for (const field of template.editable_fields) {
       const data = formData[field.id]
-      if (!data) continue // Pula se o campo não foi preenchido
+      if (!data) continue
 
-      // A biblioteca pdf-lib conta a coordenada Y a partir da base da página,
-      // então precisamos inverter a coordenada do nosso frontend.
+      // CORREÇÃO: Pega a página correta para este campo (assume 1 se não for especificada).
+      // A biblioteca usa índice 0, então subtraímos 1.
+      const pageIndex = (field.page || 1) - 1;
+      const page = pages[pageIndex];
+
+      if (!page) continue // Pula se o número da página for inválido
+
+      // Converte a coordenada Y do frontend para o sistema da pdf-lib.
       const y = page.getHeight() - field.y - field.height
 
       if (field.type === 'text') {
         page.drawText(data, {
-          x: field.x + 5, // Pequeno padding
-          y: y + (field.height / 2) - 5, // Ajuste para tentar centralizar o texto verticalmente
+          x: field.x + 5,
+          y: y + (field.height / 2) - 5,
           size: 12,
           font,
-          color: rgb(0, 0, 0), // Cor preta
+          color: rgb(0, 0, 0),
         })
       } else if (field.type === 'signature' && data.startsWith('data:image/png;base64,')) {
-        // Converte a assinatura (imagem em base64) para bytes e a insere no PDF.
         const pngImageBytes = data.substring(data.indexOf(',') + 1)
         const pngImage = await pdfDoc.embedPng(pngImageBytes)
         page.drawImage(pngImage, {
@@ -75,25 +78,22 @@ serve(async (req) => {
       }
     }
 
-    // 4. Salva o PDF modificado em memória.
+    // 4. Salva e faz o upload do novo PDF.
     const newPdfBytes = await pdfDoc.save()
-    
-    // 5. Faz o upload do novo PDF para um bucket de 'documentos-assinados'.
     const newFilePath = `signed/${crypto.randomUUID()}.pdf`
     const { error: uploadError } = await supabaseAdmin.storage
-      .from('documentos-assinados') // Certifique-se que este bucket existe!
+      .from('documentos-assinados')
       .upload(newFilePath, newPdfBytes, { contentType: 'application/pdf' })
 
     if (uploadError) throw uploadError
 
-    // 6. Retorna uma resposta de sucesso com o caminho do novo arquivo.
+    // 6. Retorna o sucesso.
     return new Response(JSON.stringify({ path: newFilePath }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,
     })
 
   } catch (error) {
-    // Retorna uma resposta de erro caso algo falhe no processo.
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 400,

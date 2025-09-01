@@ -10,13 +10,14 @@ import { createVuetify } from 'vuetify'
 // NÃO PRECISA MAIS DE: import * as components from 'vuetify/components'
 // NÃO PRECISA MAIS DE: import { VDataTable } from 'vuetify/labs/VDataTable'
 import '@mdi/font/css/materialdesignicons.css'
+import VueSignaturePad from 'vue-signature-pad';
 
 const ProfessionalTheme = {
   dark: true,
   colors: {
     background: '#121212',
     surface: '#1E1E1E',
-    primary: '#3F51B5',
+    primary: '#1a1a1bff',
     secondary: '#03DAC6',
     error: '#CF6679',
     info: '#2196F3',
@@ -38,4 +39,5 @@ const vuetify = createVuetify({
 const app = createApp(App)
 app.use(router)
 app.use(vuetify)
+app.use(VueSignaturePad);
 app.mount('#app')

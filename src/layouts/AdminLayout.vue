@@ -1,54 +1,71 @@
 <template>
-  <v-app>
-    <v-navigation-drawer v-model="drawer" app permanent>
+  <v-app id="inspire">
+    <v-navigation-drawer
+      v-model="drawer"
+      app
+      color="primary"
+      dark
+    >
       <v-list-item class="pa-4">
-        <v-list-item-title class="text-h5 font-weight-bold">
-          Painel Admin
+        <v-list-item-title class="text-h6 font-weight-bold">
+          MJ Signature
         </v-list-item-title>
         <v-list-item-subtitle>
-          Assinatura Digital
+          Painel Admin
         </v-list-item-subtitle>
       </v-list-item>
+
       <v-divider></v-divider>
-      <v-list density="compact" nav>
-        <v-list-item prepend-icon="mdi-view-dashboard" title="Visão Geral" value="dashboard" to="/admin/dashboard"></v-list-item>
-        <v-list-item prepend-icon="mdi-file-document-multiple" title="Gerenciar Templates" value="templates" to="/admin/templates"></v-list-item>
-        <v-list-item prepend-icon="mdi-file-sign" title="Documentos Assinados" value="signed" to="/admin/signed"></v-list-item>
-        <v-list-item prepend-icon="mdi-account-group" title="Usuários" value="users" to="/admin/users"></v-list-item>
+
+      <v-list dense nav>
+        <v-list-item
+          v-for="item in items"
+          :key="item.title"
+          :to="item.to"
+          link
+          class="my-1"
+        >
+          <template v-slot:prepend>
+            <v-icon>{{ item.icon }}</v-icon>
+          </template>
+          <v-list-item-title>{{ item.title }}</v-list-item-title>
+        </v-list-item>
       </v-list>
     </v-navigation-drawer>
 
-    <v-app-bar app color="surface" elevation="1">
-      <v-app-bar-nav-icon @click.stop="drawer = !drawer"></v-app-bar-nav-icon>
-      <v-toolbar-title>Bem-vindo, Admin!</v-toolbar-title>
+    <v-app-bar app color="white" flat class="border-b">
+      <v-app-bar-nav-icon @click="drawer = !drawer"></v-app-bar-nav-icon>
+      <v-toolbar-title class="font-weight-bold text-grey-darken-3">
+        </v-toolbar-title>
       <v-spacer></v-spacer>
-      <v-btn icon>
-        <v-icon>mdi-bell-outline</v-icon>
-      </v-btn>
-      <v-btn @click="handleLogout">
-        Sair
-        <v-icon end>mdi-logout</v-icon>
+      <v-btn text icon="mdi-logout" to="/dashboard">
+        <v-icon>mdi-logout</v-icon>
+        <v-tooltip activator="parent" location="bottom">Sair do Painel</v-tooltip>
       </v-btn>
     </v-app-bar>
 
-    <v-main>
-      <v-container fluid class="pa-6">
-        <router-view />
-      </v-container>
+    <v-main class="bg-grey-lighten-4">
+      <router-view />
     </v-main>
   </v-app>
 </template>
 
 <script setup>
 import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { supabase } from '@/lib/supabaseClient';
 
-const drawer = ref(true);
-const router = useRouter();
-
-const handleLogout = async () => {
-  await supabase.auth.signOut();
-  router.push('/login');
-};
+const drawer = ref(true); // Menu começa aberto
+const items = ref([
+  { title: 'Dashboard', icon: 'mdi-view-dashboard-variant-outline', to: '/admin/dashboard' },
+  { title: 'Templates', icon: 'mdi-file-document-multiple-outline', to: '/admin/templates' },
+  { title: 'Assinados', icon: 'mdi-check-decagram-outline', to: '/admin/signed' },
+  { title: 'Usuários', icon: 'mdi-account-group-outline', to: '/admin/users' },
+]);
 </script>
+
+<style scoped>
+/* Estilos para garantir que o conteúdo preencha o espaço */
+.v-main {
+  height: 100vh;
+  overflow-y: auto;
+}
+</style>
