@@ -1,57 +1,106 @@
 <template>
-  <div>
-    <h1>Meus Documentos</h1>
-    <v-progress-circular v-if="loading" indeterminate color="primary"></v-progress-circular>
-    <v-alert v-if="errorMessage" type="error">{{ errorMessage }}</v-alert>
-    
-    <v-list lines="two" v-if="!loading && documents.length > 0">
-      <v-list-item
-        v-for="doc in documents"
-        :key="doc.id"
-        :title="doc.title"
-        :subtitle="`Status: ${doc.status} - Criado em: ${new Date(doc.created_at).toLocaleDateString()}`"
-        :to="`/sign/${doc.id}`"
+  <v-container>
+    <h1 class="mb-6">Templates Disponíveis para Assinatura</h1>
+
+    <div v-if="loading" class="text-center">
+      <v-progress-circular indeterminate color="primary" size="64"></v-progress-circular>
+      <p class="mt-4">Buscando documentos...</p>
+    </div>
+
+    <v-alert v-if="errorMessage" type="error" prominent>
+      {{ errorMessage }}
+    </v-alert>
+
+    <v-row v-if="!loading && templates.length > 0">
+      <v-col
+        v-for="template in templates"
+        :key="template.id"
+        cols="12"
+        sm="6"
+        md="4"
       >
-        <template v-slot:append>
-          <v-btn color="primary" size="small">Assinar</v-btn>
-        </template>
-      </v-list-item>
-    </v-list>
-    
-    <p v-if="!loading && documents.length === 0">Nenhum documento encontrado. <router-link to="/upload">Envie seu primeiro documento!</router-link></p>
-  </div>
+        <v-card class="d-flex flex-column" height="100%">
+          <v-card-item>
+            <v-card-title class="text-wrap">{{ template.title }}</v-card-title>
+            <v-card-subtitle>
+              Disponibilizado em: {{ new Date(template.created_at).toLocaleDateString() }}
+            </v-card-subtitle>
+          </v-card-item>
+
+          <v-card-text class="flex-grow-1">
+            Clique abaixo para preencher os campos necessários e assinar este documento.
+          </v-card-text>
+
+          <v-card-actions>
+            <v-spacer></v-spacer>
+            <v-btn
+              color="primary"
+              variant="flat"
+              :to="`/sign/${template.id}`"
+            >
+              <v-icon start icon="mdi-file-edit-outline"></v-icon>
+              Preencher e Assinar
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+    </v-row>
+
+    <div v-if="!loading && templates.length === 0 && !errorMessage" class="text-center pa-8">
+       
+      <p class="text-h6 mt-4">Nenhum documento disponível no momento.</p>
+      <p class="text-medium-emphasis">Por favor, verifique novamente mais tarde.</p>
+    </div>
+
+  </v-container>
 </template>
 
 <script setup>
 import { ref, onMounted } from 'vue';
 import { supabase } from '@/lib/supabaseClient';
 
-const documents = ref([]);
+// Variáveis reativas para controlar o estado da UI
+const templates = ref([]);
 const loading = ref(true);
 const errorMessage = ref(null);
 
-const fetchDocuments = async () => {
+// Função para buscar os templates no banco de dados
+const fetchTemplates = async () => {
+  loading.value = true;
+  errorMessage.value = null;
   try {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("Usuário não encontrado");
-
+    // Busca na nova tabela 'document_templates'
     const { data, error } = await supabase
-      .from('documents')
+      .from('document_templates')
       .select('*')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (error) throw error;
+    if (error) {
+      // Se houver um erro na busca, joga o erro para o bloco catch
+      throw error;
+    }
     
-    documents.value = data;
+    // Se a busca for bem-sucedida, atualiza a lista de templates
+    templates.value = data;
+
   } catch (error) {
-    errorMessage.value = `Erro ao buscar documentos: ${error.message}`;
+    // Captura o erro e define uma mensagem amigável para o usuário
+    console.error("Erro ao buscar templates:", error);
+    errorMessage.value = 'Não foi possível carregar os documentos. Por favor, tente novamente mais tarde.';
   } finally {
+    // Garante que o indicador de carregamento seja desativado ao final
     loading.value = false;
   }
 };
 
+// Hook do ciclo de vida: chama a função de busca quando o componente é montado
 onMounted(() => {
-  fetchDocuments();
+  fetchTemplates();
 });
 </script>
+
+<style scoped>
+.text-wrap {
+  white-space: normal;
+}
+</style>
