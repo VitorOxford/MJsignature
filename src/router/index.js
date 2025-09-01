@@ -12,15 +12,21 @@ const routes = [
   { path: '/dashboard', component: () => import('@/views/Dashboard.vue'), meta: { requiresAuth: true } },
   { path: '/sign/:id', component: () => import('@/views/SignDocument.vue'), meta: { requiresAuth: true } },
 
-  // ROTAS DO PAINEL DE ADMIN (AGORA COMPLETAS)
+  // ROTAS DO PAINEL DE ADMIN
   {
     path: '/admin',
     component: AdminLayout,
     meta: { requiresAuth: true, requiresAdmin: true },
     children: [
-      { path: '', redirect: '/admin/dashboard' }, // Redireciona para o novo dashboard
-      { path: 'dashboard', component: () => import('@/views/admin/AdminDashboard.vue') }, // ROTA ADICIONADA
+      { path: '', redirect: '/admin/dashboard' },
+      { path: 'dashboard', component: () => import('@/views/admin/AdminDashboard.vue') },
       { path: 'templates', component: () => import('@/views/admin/AdminTemplates.vue') },
+      { 
+        path: 'template/:id', 
+        name: 'TemplateEditor', 
+        component: () => import('@/views/admin/TemplateEditor.vue'), 
+        props: true 
+      },
       { path: 'signed', component: () => import('@/views/admin/AdminSigned.vue') },
       { path: 'users', component: () => import('@/views/admin/AdminUsers.vue') }
     ]
@@ -32,7 +38,7 @@ const router = createRouter({
   routes,
 })
 
-// Guarda de Navegação (sem alterações)
+// Guarda de Navegação
 router.beforeEach(async (to, from, next) => {
   const { data: { session } } = await supabase.auth.getSession();
 

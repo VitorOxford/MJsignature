@@ -40,18 +40,31 @@
         <template v-slot:item.created_at="{ item }">
           {{ new Date(item.created_at).toLocaleDateString('pt-BR') }}
         </template>
-        <template v-slot:item.actions="{ item }">
-          <v-tooltip text="Editar Campos">
-            <template v-slot:activator="{ props }">
-              <v-icon v-bind="props" class="me-2" @click="editItem(item)" color="grey-darken-1">mdi-pencil</v-icon>
-            </template>
-          </v-tooltip>
-          <v-tooltip text="Excluir Template">
-            <template v-slot:activator="{ props }">
-              <v-icon v-bind="props" @click="deleteItem(item)" color="error">mdi-delete</v-icon>
-            </template>
-          </v-tooltip>
-        </template>
+<template v-slot:item.actions="{ item }">
+  <v-tooltip text="Editar Campos">
+    <template v-slot:activator="{ props }">
+      <v-btn
+        v-bind="props"
+        icon="mdi-pencil"
+        variant="text"
+        color="grey-darken-1"
+        :to="{ name: 'TemplateEditor', params: { id: item.id } }"
+      ></v-btn>
+    </template>
+  </v-tooltip>
+
+  <v-tooltip text="Excluir Template">
+    <template v-slot:activator="{ props }">
+       <v-btn
+        v-bind="props"
+        icon="mdi-delete"
+        variant="text"
+        color="error"
+        @click="deleteItem(item)"
+      ></v-btn>
+    </template>
+  </v-tooltip>
+</template>
       </v-data-table>
     </v-card>
 
@@ -89,7 +102,7 @@
             variant="flat"
             @click="handleCreateTemplate"
             :loading="isUploading"
-            :disabled="!newTemplate.title || !newTemplate.file"
+            :disabled="!newTemplate.title || !newTemplate.file.length"
           >
             Salvar Template
           </v-btn>
@@ -117,7 +130,7 @@ const dialog = ref(false);
 const isUploading = ref(false);
 const newTemplate = ref({
   title: '',
-  file: null,
+  file: [],
 });
 
 const fetchTemplates = async () => {
@@ -134,14 +147,12 @@ const fetchTemplates = async () => {
 };
 
 const handleCreateTemplate = async () => {
-  if (!newTemplate.value.title || !newTemplate.value.file) {
+  if (!newTemplate.value.title || !newTemplate.value.file.length) {
     return alert('Por favor, preencha todos os campos.');
   }
   isUploading.value = true;
   try {
-    // A CORREÇÃO ESTÁ AQUI: Removemos o [0]
-    const file = newTemplate.value.file; 
-    
+    const file = newTemplate.value.file[0];
     if (!file) throw new Error("Arquivo não selecionado.");
 
     const { data: { user } } = await supabase.auth.getUser();
@@ -170,7 +181,7 @@ const handleCreateTemplate = async () => {
 const closeDialog = () => {
   dialog.value = false;
   newTemplate.value.title = '';
-  newTemplate.value.file = null;
+  newTemplate.value.file = [];
 };
 
 const editItem = (item) => {

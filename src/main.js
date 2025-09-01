@@ -1,3 +1,5 @@
+// src/main.js
+
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
@@ -5,10 +7,9 @@ import router from './router'
 // Vuetify
 import 'vuetify/styles'
 import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+// NÃO PRECISA MAIS DE: import * as components from 'vuetify/components'
+// NÃO PRECISA MAIS DE: import { VDataTable } from 'vuetify/labs/VDataTable'
 import '@mdi/font/css/materialdesignicons.css'
-import { mdi } from 'vuetify/iconsets/mdi'
 
 const ProfessionalTheme = {
   dark: true,
@@ -24,15 +25,8 @@ const ProfessionalTheme = {
   },
 }
 
+// Note que a propriedade 'components' foi removida, pois o plugin cuida disso
 const vuetify = createVuetify({
-  components,
-  directives,
-  icons: {
-    defaultSet: 'mdi',
-    sets: {
-      mdi,
-    },
-  },
   theme: {
     defaultTheme: 'ProfessionalTheme',
     themes: {
