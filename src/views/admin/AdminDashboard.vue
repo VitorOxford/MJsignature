@@ -1,13 +1,13 @@
 <template>
-  <v-container fluid class="pa-6">
-    <v-row>
-      <v-col>
+  <v-container fluid class="pa-6 dashboard-container">
+    <v-row class="mb-4">
+      <v-col cols="12">
         <h1 class="text-h4 font-weight-bold text-grey-darken-4">Visão Geral</h1>
         <p class="text-subtitle-1 text-grey-darken-1">Bem-vindo ao seu painel de controle.</p>
       </v-col>
     </v-row>
 
-    <div v-if="loading" class="text-center py-16">
+    <div v-if="loading" class="text-center py-16 w-100">
       <v-progress-circular indeterminate size="64" color="primary"></v-progress-circular>
     </div>
 
@@ -15,7 +15,7 @@
       {{ error }}
     </v-alert>
 
-    <div v-else>
+    <div v-else class="dashboard-content">
       <v-row>
         <v-col cols="12" md="4">
           <v-card class="stat-card" color="#1A237E" theme="dark" elevation="4">
@@ -85,11 +85,7 @@
 import { ref, onMounted } from 'vue';
 import { supabase } from '@/lib/supabaseClient';
 
-const stats = ref({
-  templates: 0,
-  signed: 0,
-  users: 0,
-});
+const stats = ref({ templates: 0, signed: 0, users: 0 });
 const loading = ref(true);
 const error = ref(null);
 
@@ -106,7 +102,6 @@ const fetchStats = async () => {
     stats.value.templates = templatesCount.count;
     stats.value.users = usersCount.count;
     stats.value.signed = 0;
-
   } catch (err) {
     error.value = `Erro ao carregar estatísticas: ${err.message}`;
   } finally {
@@ -118,6 +113,10 @@ onMounted(fetchStats);
 </script>
 
 <style scoped>
+.dashboard-container {
+  width: 100%;
+  min-height: 100vh;
+}
 .stat-card {
   padding: 24px;
   border-radius: 16px;
@@ -127,7 +126,6 @@ onMounted(fetchStats);
   transform: translateY(-10px);
   box-shadow: 0 14px 28px rgba(0,0,0,0.25), 0 10px 10px rgba(0,0,0,0.22) !important;
 }
-.fill-height {
-  height: 100%;
-}
+.fill-height { height: 100%; }
+.dashboard-content { width: 100%; }
 </style>
